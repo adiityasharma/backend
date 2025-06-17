@@ -15,6 +15,7 @@ const uploadOnCloudinary = async (localFilePath) => {
     // upload file on cloudinary
     const response = await cloudinary.uploader.upload(localFilePath, {
       resource_type: "auto",
+      public_id: `${Date.now()}/${localFilePath}`
     })
     // if(!response) throw new apiError(400, "failed to upload file")
     //for confirmation    
@@ -29,7 +30,21 @@ const uploadOnCloudinary = async (localFilePath) => {
     return null;
   }
 }
+const deleteFromCloudinary = async (publicId) =>{
+  try {
+    if (!publicId) return console.log("public id missing");
 
-export { uploadOnCloudinary };
+    await cloudinary.uploader.destroy(publicId, {invalidate: true})
+
+    return true
+
+  } catch (error) {
+    console.error("❌ Cloudinary file delete failed:", error);
+    return null;
+  }
+
+}
+
+export { uploadOnCloudinary, deleteFromCloudinary };
 
 
