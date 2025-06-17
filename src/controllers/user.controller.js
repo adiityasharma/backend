@@ -1,7 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { apiError } from "../utils/apiErrors.js";
 import { User } from "../models/user.models.js"
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { deleteFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import { apiResponse } from "../utils/apiResponse.js"
 import jwt from "jsonwebtoken"
 
@@ -243,9 +243,13 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   const avatar = await uploadOnCloudinary(avatarLocalPath);
   if (!avatar.url) throw new apiError(400, "Error while uploading avatar on cloudinary");
 
+  // to delete old avatar image from cloudinary
+  const oldImage = await User.findById(req.user?._id)
+  await deleteFromCloudinary(oldImage?.avatarId)
+
   const user = await User.findByIdAndUpdate(req.user?._id,
     {
-      $set: { avatar: avatar.url }
+      $set: { avatar: avatar.url, avatarId: avatar.public_id }
     },
     { new: true }
   ).select("-password")
@@ -269,10 +273,14 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   const coverImage = await uploadOnCloudinary(coverImageLocalPath);
   if (!coverImage.url) throw new apiError(400, "Error while uploading cover image on cloudinary");
 
+  // to delete old avatar image from cloudinary
+  const oldCoverImage = await User.findById(req.user?._id)
+  await deleteFromCloudinary(oldCoverImage?.coverImageId)
+
   const user = await User.findByIdAndUpdate(
     req.user?._id,
     {
-      $set: { coverImage: coverImage.url }
+      $set: { coverImage: coverImage.url, coverImageId: coverImage.public_id }
     },
     { new: true }
   ).select("-password")
