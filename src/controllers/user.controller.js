@@ -184,7 +184,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 const changeCurrentPassword = asyncHandler(async (req, res) => {
 
   const { oldPassword, newPassword } = req.body;
-  if (!oldPassword && !newPassword) throw new apiError(404, "Password is required");
+  if (!oldPassword || !newPassword) throw new apiError(404, "Password is required");
 
   const user = await User.findById(req.user?._id);
   const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
@@ -300,12 +300,12 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 
 const getUserChannelProfile = asyncHandler(async (req, res) => {
 
-  const {username} = req.params
-  if(!username.trim()) throw new apiError(400, "Username is missing");
+  const { username } = req.params
+  if (!username.trim()) throw new apiError(400, "Username is missing");
 
   const channel = await User.aggregate([
     {
-      $match: {username: username?.toLowerCase()}
+      $match: { username: username?.toLowerCase() }
     },
     {
       $lookup: {
@@ -333,7 +333,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         },
         isSubscribed: {
           $cond: {
-            if: {$in: [req.user?._id, "$subscribers.subscriber"]},
+            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
             then: true,
             else: false
           }
@@ -354,29 +354,29 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     }
   ])
 
-  if(!channel?.length) throw new apiError(404, "Channel dose not exist");
+  if (!channel?.length) throw new apiError(404, "Channel dose not exist");
 
   return res.status(200)
-  .json(
-    new apiResponse(200, channel[0], "User channel fetched successfully")
-  )
+    .json(
+      new apiResponse(200, channel[0], "User channel fetched successfully")
+    )
 
 })
 
 
-const getWatchHistory = asyncHandler(async (req, res)=>{
-  
+const getWatchHistory = asyncHandler(async (req, res) => {
+
   const user = await User.aggregate([
     {
       $match: {
-        id: mongoose.Types.ObjectId(req.user?._id)
+        _id: new mongoose.Types.ObjectId(req.user?._id)
       }
     },
     {
       $lookup: {
         from: "videos",
         localField: "watchHistory",
-        foreignField: "-id",
+        foreignField: "_id",
         as: "watchHistory",
         pipeline: [
           {
@@ -392,7 +392,7 @@ const getWatchHistory = asyncHandler(async (req, res)=>{
                     username: 1,
                     avatar: 1
                   }
-                }                
+                }
               ]
             }
           },
@@ -409,9 +409,9 @@ const getWatchHistory = asyncHandler(async (req, res)=>{
   ])
 
   return res.status(200)
-  .json(
-    new apiResponse(200, user[0].watchHistory, "Watch history fetched successfully")
-  )
+    .json(
+      new apiResponse(200, user, "Watch history fetched successfully")
+    )
 
 
 })
